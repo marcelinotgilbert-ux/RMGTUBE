@@ -1,0 +1,8 @@
+{
+  "appId": "com.rmgtube.app",
+  "appName": "RMGTUBE",
+  "webDir": "web/dist",
+  "server": {
+    "cleartext": true
+  }
+}

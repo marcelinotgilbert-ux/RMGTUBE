@@ -1,0 +1,14 @@
+{
+  "name": "rmgtube",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build:web": "npm --prefix web install && npm --prefix web run build",
+    "android:build": "npm install && npm run build:web && npx cap add android && npx cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/cli": "latest",
+    "@capacitor/core": "latest"
+  }
+}
