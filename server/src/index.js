@@ -14,10 +14,13 @@ const db = new Database(path.join(root, 'rmgtube.db'));
 const uploads = path.join(root, 'uploads');
 fs.mkdirSync(uploads, { recursive: true });
 const JWT_SECRET = process.env.JWT_SECRET || 'CHANGE_ME_IN_PRODUCTION';
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'marcelinotgilbert@gmail.com').trim().toLowerCase();
+const isAdmin = (email) => String(email).trim().toLowerCase() === ADMIN_EMAIL;
 
 db.exec(`CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT,email TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS media(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,type TEXT NOT NULL,filename TEXT NOT NULL,mime TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
 
+try { db.exec("ALTER TABLE users ADD COLUMN admin INTEGER NOT NULL DEFAULT 0"); } catch {} db.prepare("UPDATE users SET admin=1 WHERE email=?").run(ADMIN_EMAIL);
 const app = express();
 app.use(cors());
 app.use(express.json());
