@@ -21,6 +21,7 @@ db.exec(`CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT,e
 CREATE TABLE IF NOT EXISTS media(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,type TEXT NOT NULL,filename TEXT NOT NULL,mime TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
 
 try { db.exec("ALTER TABLE users ADD COLUMN admin INTEGER NOT NULL DEFAULT 0"); } catch {} db.prepare("UPDATE users SET admin=1 WHERE email=?").run(ADMIN_EMAIL);
+if (process.env.ADMIN_PASSWORD) { const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12); const existing = db.prepare("SELECT id FROM users WHERE email=?").get(ADMIN_EMAIL); if (existing) db.prepare("UPDATE users SET password_hash=?, admin=1 WHERE email=?").run(hash, ADMIN_EMAIL); else db.prepare("INSERT INTO users(email,password_hash,admin) VALUES(?,?,1)").run(ADMIN_EMAIL, hash); }
 const app = express();
 app.use(cors());
 app.use(express.json());
