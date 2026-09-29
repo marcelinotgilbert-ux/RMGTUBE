@@ -6,7 +6,8 @@ const API=import.meta.env.VITE_API_URL||'https://rmgtube-1.onrender.com';
 const LOGO='/rmgtube-logo.png';
 
 function App(){
- const[token,setToken]=useState(localStorage.getItem('rmgtube_token')||'');
+ const[token,setToken]=useState(localStorage.getItem('rmgtube_token')||''); const[isAdmin,setIsAdmin]=useState(localStorage.getItem('rmgtube_admin')==='1');
+ const[adminMode,setAdminMode]=useState(false);
  const[mode,setMode]=useState('login');
  const[email,setEmail]=useState('');
  const[pw,setPw]=useState('');
@@ -18,7 +19,7 @@ function App(){
    const r=await fetch(`${API}/api/auth/${mode}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
    const d=await r.json();
    if(!r.ok)return setErr(d.error||'Erreur');
-   localStorage.setItem('rmgtube_token',d.token);setToken(d.token);
+   localStorage.setItem('rmgtube_token',d.token);localStorage.setItem('rmgtube_admin',d.user.admin?'1':'0');setIsAdmin(Boolean(d.user.admin));setToken(d.token);
   }catch{setErr('Serveur indisponible.');}
  }
  async function load(){
@@ -41,7 +42,7 @@ function App(){
  return <>
   <header>
    <div className="brand"><img src={LOGO} alt="RMGTUBE"/><strong>RMGTUBE</strong></div>
-   <button onClick={()=>{localStorage.removeItem('rmgtube_token');setToken('')}}>Déconnexion</button>
+  {isAdmin&&<button onClick={()=>setAdminMode(!adminMode)}>⚙️ Admin</button>}<button onClick={()=>{localStorage.removeItem("rmgtube_token");localStorage.removeItem("rmgtube_admin");setIsAdmin(false);setToken("")}}>Déconnexion</button>
   </header>
   <main><h2>Hira sy Vidéo</h2><div className="grid">
    {media.map(m=><article key={m.id}>
