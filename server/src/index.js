@@ -46,7 +46,7 @@ app.post('/api/auth/login', async (req,res)=>{
   const email=String(req.body.email||'').trim().toLowerCase(); const password=String(req.body.password||'');
   const u=db.prepare('SELECT * FROM users WHERE email=?').get(email);
   if(!u || !(await bcrypt.compare(password,u.password_hash))) return res.status(401).json({error:'Email or password incorrect'});
-  const token=jwt.sign({id:u.id,email:u.email},JWT_SECRET,{expiresIn:'7d'}); res.json({token,user:{id:u.id,email:u.email,admin:Boolean(u.admin)}});
+  const token=jwt.sign({id:u.id,email:u.email},JWT_SECRET,{expiresIn:'7d'}); res.json({token,user:{id:u.id,email:u.email,admin:(email === ADMIN_EMAIL || Boolean(u.admin))}});
 });
 app.get('/api/me',auth,(req,res)=>res.json({user:req.user}));
 app.get('/api/media',(req,res)=>res.json(db.prepare('SELECT id,title,type,filename,mime,created_at FROM media ORDER BY id DESC').all()));
