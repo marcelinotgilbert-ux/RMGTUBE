@@ -27,6 +27,7 @@ app.use(express.json());
 app.use('/uploads', express.static(uploads));
 const upload = multer({ dest: uploads, limits: { fileSize: 500 * 1024 * 1024 } });
 
+function requireAdmin(req,res,next){ if(!isAdmin(req.user.email)) return res.status(403).json({error:"Admin only"}); next(); }
 function auth(req,res,next){
   const h=req.headers.authorization||''; const token=h.startsWith('Bearer ')?h.slice(7):null;
   if(!token) return res.status(401).json({error:'Authentication required'});
@@ -48,7 +49,7 @@ app.post('/api/auth/login', async (req,res)=>{
 });
 app.get('/api/me',auth,(req,res)=>res.json({user:req.user}));
 app.get('/api/media',(req,res)=>res.json(db.prepare('SELECT id,title,type,filename,mime,created_at FROM media ORDER BY id DESC').all()));
-app.post('/api/media',auth,upload.single('file'),(req,res)=>{
+app.post('/api/media',auth,requireAdmin,upload.single('file'),(req,res)=>{
   if(!req.file||!req.body.title||!['audio','video'].includes(req.body.type)) return res.status(400).json({error:'title, type and file required'});
   const r=db.prepare('INSERT INTO media(title,type,filename,mime) VALUES(?,?,?,?)').run(req.body.title,req.body.type,req.file.filename,req.file.mimetype);
   res.json({id:r.lastInsertRowid,title:req.body.title,type:req.body.type,filename:req.file.filename});
