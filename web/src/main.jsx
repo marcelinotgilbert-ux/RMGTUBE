@@ -12,7 +12,7 @@ function App(){
  const[mode,setMode]=useState('login');
  const[email,setEmail]=useState('');
  const[pw,setPw]=useState('');
- const[media,setMedia]=useState([]);
+ const[media,setMedia]=useState([]); const[search,setSearch]=useState('');
  const[err,setErr]=useState('');
  const[message,setMessage]=useState('');
  const[title,setTitle]=useState('');
@@ -205,10 +205,10 @@ function App(){
   )}
 
   <main>
-   <h2>Hira sy Vidéo</h2>
+   <h2>Hira sy Vidéo</h2><input type="search" placeholder="🔍 Mitadiava hira na vidéo..." value={search} onChange={e=>setSearch(e.target.value)} />
 
    <div className="grid">
-    {media.map(m=>
+    {media.filter(m=>m.title.toLowerCase().includes(search.toLowerCase())).map(m=>
      <article key={m.id}>
       <h3>{m.title}</h3>
 
