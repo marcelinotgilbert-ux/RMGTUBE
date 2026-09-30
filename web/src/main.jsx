@@ -13,6 +13,11 @@ function App(){
  const[email,setEmail]=useState('');
  const[pw,setPw]=useState('');
  const[media,setMedia]=useState([]); const[search,setSearch]=useState('');
+const[settingsOpen,setSettingsOpen]=useState(false);
+const[lang,setLang]=useState(localStorage.getItem('rmgtube_lang')||'mg');
+const changeLang=(v)=>{setLang(v);localStorage.setItem('rmgtube_lang',v)};
+ const[comments,setComments]=useState({});
+ const[commentText,setCommentText]=useState({});
  const[err,setErr]=useState('');
  const[message,setMessage]=useState('');
  const[title,setTitle]=useState('');
@@ -158,11 +163,24 @@ function App(){
      </button>
     )}
 
+<button onClick={()=>setSettingsOpen(!settingsOpen)}>⚙️ Paramètres</button>
     <button onClick={logout}>
      Déconnexion
     </button>
    </div>
   </header>
+{settingsOpen&&(<main>
+<div className="card">
+<h2>⚙ Paramètres</h2>
+<label>🌐 Langue</label>
+<select value={lang} onChange={e=>changeLang(e.target.value)}>
+<option value="mg">🇲🇬 Malagasy</option>
+<option value="fr">🇫🇷 Français</option>
+<option value="en">🇬🇧 English</option>
+</select>
+<button onClick={()=>setSettingsOpen(false)}>Fermer</button>
+</div>
+</main>)}
 
   {isAdmin&&adminMode&&(
    <main>

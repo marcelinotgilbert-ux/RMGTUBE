@@ -18,7 +18,8 @@ const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'marcelinotgilbert@gmail.com').t
 const isAdmin = (email) => String(email).trim().toLowerCase() === ADMIN_EMAIL;
 
 db.exec(`CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT,email TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS media(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,type TEXT NOT NULL,filename TEXT NOT NULL,mime TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
+CREATE TABLE IF NOT EXISTS media(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,type TEXT NOT NULL,filename TEXT NOT NULL,mime TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);CREATE TABLE IF NOT EXISTS reactions(id INTEGER PRIMARY KEY AUTOINCREMENT,media_id INTEGER NOT NULL,user_id INTEGER NOT NULL,created_at TEXT DEFAULT CURRENT_TIMESTAMP,UNIQUE(media_id,user_id));
+CREATE TABLE IF NOT EXISTS comments(id INTEGER PRIMARY KEY AUTOINCREMENT,media_id INTEGER NOT NULL,user_id INTEGER NOT NULL,body TEXT NOT NULL,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
 
 try { db.exec("ALTER TABLE users ADD COLUMN admin INTEGER NOT NULL DEFAULT 0"); } catch {} db.prepare("UPDATE users SET admin=1 WHERE email=?").run(ADMIN_EMAIL);
 if (process.env.ADMIN_PASSWORD) { const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12); const existing = db.prepare("SELECT id FROM users WHERE email=?").get(ADMIN_EMAIL); if (existing) db.prepare("UPDATE users SET password_hash=?, admin=1 WHERE email=?").run(hash, ADMIN_EMAIL); else db.prepare("INSERT INTO users(email,password_hash,admin) VALUES(?,?,1)").run(ADMIN_EMAIL, hash); }
@@ -55,6 +56,24 @@ app.post('/api/media',auth,requireAdmin,upload.single('file'),(req,res)=>{
   if(!req.file||!req.body.title||!['audio','video'].includes(req.body.type)) return res.status(400).json({error:'title, type and file required'});
   const r=db.prepare('INSERT INTO media(title,type,filename,mime) VALUES(?,?,?,?)').run(req.body.title,req.body.type,req.file.filename,req.file.mimetype);
   res.json({id:r.lastInsertRowid,title:req.body.title,type:req.body.type,filename:req.file.filename});
+});
+app.post('/api/media/:id/reaction',auth,(req,res)=>{
+  const mediaId=Number(req.params.id);
+  const old=db.prepare('SELECT id FROM reactions WHERE media_id=? AND user_id=?').get(mediaId,req.user.id);
+  if(old) db.prepare('DELETE FROM reactions WHERE id=?').run(old.id);
+  else db.prepare('INSERT INTO reactions(media_id,user_id) VALUES(?,?)').run(mediaId,req.user.id);
+  const count=db.prepare('SELECT COUNT(*) AS n FROM reactions WHERE media_id=?').get(mediaId).n;
+  res.json({reacted:!old,count});
+});
+app.get('/api/media/:id/comments',(req,res)=>{
+  const rows=db.prepare('SELECT c.id,c.body,c.created_at,u.email FROM comments c JOIN users u ON u.id=c.user_id WHERE c.media_id=? ORDER BY c.id DESC').all(Number(req.params.id));
+  res.json(rows);
+});
+app.post('/api/media/:id/comments',auth,(req,res)=>{
+  const body=String(req.body.body||'').trim();
+  if(!body) return res.status(400).json({error:'Commentaire vide'});
+  db.prepare('INSERT INTO comments(media_id,user_id,body) VALUES(?,?,?)').run(Number(req.params.id),req.user.id,body);
+  res.json({ok:true});
 });
 app.get('/api/media/:id/download',auth,(req,res)=>{
   const m=db.prepare('SELECT * FROM media WHERE id=?').get(req.params.id); if(!m) return res.sendStatus(404);
