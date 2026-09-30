@@ -80,3 +80,10 @@ app.get('/api/media/:id/download',auth,(req,res)=>{
   res.download(path.join(uploads,m.filename),m.title.replace(/[^a-z0-9._-]/gi,'_'));
 });
 app.listen(process.env.PORT||4000,()=>console.log('RMGTUBE API running on http://localhost:4000'));
+
+app.get('/api/media/:id/reaction',auth,(req,res)=>{
+  const mediaId=Number(req.params.id);
+  const count=db.prepare('SELECT COUNT(*) AS n FROM reactions WHERE media_id=?').get(mediaId).n;
+  const mine=db.prepare('SELECT id FROM reactions WHERE media_id=? AND user_id=?').get(mediaId,req.user.id);
+  res.json({reacted:Boolean(mine),count});
+});
